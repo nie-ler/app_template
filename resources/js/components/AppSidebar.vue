@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Users, Logs, CreditCard } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Users, Logs, CreditCard, Settings } from 'lucide-vue-next';
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
@@ -16,6 +16,7 @@ const iconMap = {
     Users,
     Logs,
     CreditCard,
+    Settings,
 };
 
 // Get navigation from Inertia shared data

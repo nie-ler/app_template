@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import InputError from '@/components/InputError.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import { type NavItem } from '@/types';
 import PlaceholderPattern from '../components/PlaceholderPattern.vue';
 
@@ -20,6 +21,9 @@ const props = defineProps<{
         verificationStatus: string[];
     };
 }>();
+
+// Create a ref for the name input to focus on it later
+const nameInputRef = ref<HTMLInputElement | null>(null);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -101,30 +105,67 @@ const form = useForm({
 })
 
 function submit() {
-  form.post(route('users.store', { tenant: props.tenant }))
+  form.post(route('users.store', { tenant: props.tenant }), {
+        preserveScroll: false, // This will allow the page to scroll to the form after submission
+        onSuccess: () => {
+            // Only reset on success (when there are no errors)
+            form.reset('name', 'email');
+            console.log('Form submitted successfully, fields reset');
+            
+            // Add a slight delay to ensure the DOM has updated, then scroll to the form
+            setTimeout(() => {
+                document.getElementById('new-user-form')?.scrollIntoView({ behavior: 'smooth' });
+                
+                // Focus on the name input after scrolling
+                nextTick(() => {
+                    if (nameInputRef.value) {
+                        nameInputRef.value.focus();
+                    }
+                });
+            }, 100);
+        },
+        onError: (errors) => {
+            console.error('Form submission errors:', errors);
+            // Also scroll to form when there are errors to show them
+            setTimeout(() => {
+                document.getElementById('new-user-form')?.scrollIntoView({ behavior: 'smooth' });
+                
+                // Focus on the name input after scrolling, even when there are errors
+                nextTick(() => {
+                    if (nameInputRef.value) {
+                        nameInputRef.value.focus();
+                    }
+                });
+            }, 100);
+        },
+        onFinish: () => {
+            console.log('Form submission finished, errors present:', Object.keys(form.errors).length > 0);
+        },
+    });
 }
 
-function deleteUser(id) {
+function deleteUser(userId) {
   if (confirm('Diesen Nutzer wirklich löschen?')) {
-    router.delete(route('users.destroy', { 
-      tenant: props.tenant,
-      user: id
-    }), {
-      preserveScroll: false,
-      preserveState: false,
-      replace: true,
-    });
-  }
+    router.delete(
+        route('users.destroy', { user: userId, tenant: props.tenant }), 
+        {
+            preserveScroll: false,
+            preserveState: false,
+            replace: true,
+        });
+    }
 }
 
 function updateUserRole(userId: number, newRole: string) {
-  router.post(route('users.assign-role', { user: userId, tenant: props.tenant }), {
-    role: newRole
-  }, {
-    preserveScroll: true,
-    preserveState: true,
-    replace: true,
-  });
+    router.post(
+        route('users.assign-role', { user: userId, tenant: props.tenant }), 
+        {
+            role: newRole
+        }, {
+            preserveScroll: true,
+            preserveState: false,
+            replace: true,
+    });
 }
 </script>
 
@@ -245,7 +286,6 @@ function updateUserRole(userId: number, newRole: string) {
                                         </div>
                                         <div class="ml-4">
                                             <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ user.name }}</div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-400">#{{ user.id }}</div>
                                         </div>
                                     </div>
                                 </td>
@@ -323,16 +363,18 @@ function updateUserRole(userId: number, newRole: string) {
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-sidebar-border/70 p-6">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">Add New User</h3>
                 
-                <form @submit.prevent="submit" class="space-y-4 max-w-2xl">
+                <form id="new-user-form" @submit.prevent="submit" class="space-y-4 max-w-2xl">
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
                         <input
                             id="name"
+                            ref="nameInputRef"
                             v-model="form.name"
                             type="text"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
                             required
                         />
+                        <InputError :message="form.errors.name ? form.errors.name[0] : null" />
                     </div>
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
@@ -343,6 +385,7 @@ function updateUserRole(userId: number, newRole: string) {
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
                             required
                         />
+                        <InputError :message="form.errors.email ? form.errors.email[0] : null" />
                     </div>
                     <div>
                         <button

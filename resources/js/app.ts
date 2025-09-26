@@ -1,12 +1,20 @@
 import '../css/app.css';
 
-import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
-
+import { createApp, h } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
-// import { initializeTheme } from './composables/useAppearance';
+import { initializeTheme } from './composables/useAppearance';
+
+// Extend ImportMeta interface for Vite env support
+interface ImportMetaEnv {
+    VITE_APP_NAME?: string;
+    // add other env variables as needed
+}
+interface ImportMeta {
+    env: ImportMetaEnv;
+}
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

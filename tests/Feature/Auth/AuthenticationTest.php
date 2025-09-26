@@ -25,11 +25,26 @@ test('users can authenticate using the login screen', function () {
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $this->post('/login', [
+    $response = $this->post('/login', [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
 
+    $response->assertSessionHasErrors(['email' => 'These credentials do not match our records.']);
+    
+    $this->assertGuest();
+});
+
+test('users can not authenticate with wrong mail', function () {
+    $user = User::factory()->create();
+
+    $response = $this->post('/login', [
+        'email' => 'wrong@mail.xxx',
+        'password' => 'password',
+    ]);
+
+    $response->assertSessionHasErrors(['email' => 'These credentials do not match our records.']);
+    
     $this->assertGuest();
 });
 

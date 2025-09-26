@@ -20,6 +20,13 @@ const props = defineProps<{
     };
 }>();
 
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Files',
+        href: route('tenant.files.show', { tenant: props.tenant }),
+    },
+];
+
 const showUploadModal = ref(false);
 const showDeleteModal = ref(false);
 const search = ref(props.filters.search || '');

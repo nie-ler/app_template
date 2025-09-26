@@ -296,7 +296,11 @@ function updateUserRole(userId: number, tenantId: string, newRole: string) {
                                     <div class="text-sm text-gray-900 dark:text-gray-100">{{ user.tenant_id }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span v-if="user.email_verified_at" 
+                                    <span v-if="user.deleted_at" 
+                                          class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+                                        Deleted
+                                    </span>
+                                    <span v-else-if="user.email_verified_at" 
                                           class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
                                         Verified
                                     </span>

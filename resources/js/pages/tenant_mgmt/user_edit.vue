@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import InputError from '@/components/InputError.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -14,7 +15,7 @@ const { tenant, user } = defineProps<{
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Users',
+        title: 'Tenant Users',
         href: route('users.index', { tenant }),
     },
     {
@@ -86,7 +87,7 @@ function updateUserRole(userId: number, tenantId: string, newRole: string) {
                                 :class="{ 'border-red-300 dark:border-red-500': form.errors.name }"
                                 required
                             />
-                            <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.errors.name }}</p>
+                            <InputError :message="form.errors.name ? form.errors.name[0] : null" />
                         </div>
 
                         <div>
@@ -99,7 +100,7 @@ function updateUserRole(userId: number, tenantId: string, newRole: string) {
                                 :class="{ 'border-red-300 dark:border-red-500': form.errors.email }"
                                 required
                             />
-                            <p v-if="form.errors.email" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.errors.email }}</p>
+                            <InputError :message="form.errors.email ? form.errors.email[0] : null" />
                         </div>
 
                         <div>
@@ -111,7 +112,7 @@ function updateUserRole(userId: number, tenantId: string, newRole: string) {
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
                                 :class="{ 'border-red-300 dark:border-red-500': form.errors.password }"
                             />
-                            <p v-if="form.errors.password" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.errors.password }}</p>
+                            <InputError :message="form.errors.password ? form.errors.password[0] : null" />
                         </div>
 
                         <div>
@@ -122,6 +123,7 @@ function updateUserRole(userId: number, tenantId: string, newRole: string) {
                                 type="password"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
                             />
+                            <InputError :message="form.errors.password_confirmation ? form.errors.password_confirmation[0] : null" />
                         </div>
 
                         <div>

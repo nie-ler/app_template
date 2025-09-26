@@ -10,6 +10,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function getEnvironmentSetUp($app)
     {
+        /*
         // Prüfen, in welcher Testsuite wir sind
         if ($this->isMysqlSuite()) {
             config()->set('database.default', 'mysql');
@@ -21,7 +22,7 @@ abstract class TestCase extends BaseTestCase
         } else {
             config()->set('database.default', 'sqlite');
             config()->set('database.connections.sqlite.database', ':memory:');
-        }
+        }*/
     }
 
     protected function isMysqlSuite(): bool

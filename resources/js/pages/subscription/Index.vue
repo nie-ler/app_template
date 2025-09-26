@@ -121,9 +121,10 @@ const updatePaymentMethod = async () => {
 
 // Format currency helper
 const formatCurrency = (amount: number, currency: string) => {
+    if (!currency) currency = 'usd'; // TODO : Anpassung wo der Preis für die Pläne herkommt, aus der Plans Tabelle oder direkt von Stripe? Momentan liegt der Preis/Currency noch nicht in der lokalen DB.
     return new Intl.NumberFormat('de-DE', {
         style: 'currency',
-        currency: currency
+        currency: currency.toUpperCase()
     }).format(amount / 100);
 };
 

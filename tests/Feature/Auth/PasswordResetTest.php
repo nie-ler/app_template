@@ -13,7 +13,7 @@ test('reset password link screen can be rendered', function () {
 });
 
 test('reset password link can be requested', function () {
-    Notification::fake();
+    #Notification::fake();
 
     $user = User::factory()->create();
 
