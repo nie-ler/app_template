@@ -32,6 +32,16 @@ beforeEach(function () {
     $user->assignRole('owner');
     $user->tenant_id = $tenant->id;
     $user->save();
+
+    // Create test user without tenant
+    $userWithoutTenant = User::factory()->create([
+        'email' => 'testxy@example.com',
+        'name' => 'Test User 2',
+    ]);
+
+    $userWithoutTenant->assignRole('owner');
+    $userWithoutTenant->save();
+
     
     // Create a tenant for testing
     $wrong_tenant = Tenant::create([
@@ -41,6 +51,7 @@ beforeEach(function () {
     ]);
     
     $this->user = $user;
+    $this->userWithoutTenant = $userWithoutTenant;
     $this->tenant = $tenant;
     $this->wrong_tenant = $wrong_tenant;
 });
@@ -50,11 +61,13 @@ afterEach(function () {
     // Clean up: end tenancy
     $this->tenant->delete();
     $this->wrong_tenant->delete();
+    $this->user->forceDelete();
+    $this->userWithoutTenant->forceDelete();
     tenancy()->end();
     
 });
 
-it('[user_authentication_test] can login', function () {
+it('can login', function () {
     $response = $this->post('/login', [
         'email' => $this->user->email,
         'password' => 'password',
@@ -66,7 +79,7 @@ it('[user_authentication_test] can login', function () {
     $response->assertStatus(200);
 });
 
-it('[user_authentication_test] can not acces wrong tenant', function () {
+it('can not acces wrong tenant', function () {
     $response = $this->post('/login', [
         'email' => $this->user->email,
         'password' => 'password',
@@ -78,7 +91,31 @@ it('[user_authentication_test] can not acces wrong tenant', function () {
     $response->assertStatus(403);
 });
 
-it('[user_authentication_test] can edit user', function () {
+it('can not acces without tenant', function () {
+    $response = $this->post('/login', [
+        'email' => $this->userWithoutTenant->email,
+        'password' => 'password',
+    ]);
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('dashboard', absolute: false));
+
+    $response = $this->actingAs($this->userWithoutTenant)->get("/{$this->tenant->id}/users");
+    $response->assertStatus(403);
+});
+
+it('can not acces without tenant-route', function () {
+    $response = $this->post('/login', [
+        'email' => $this->userWithoutTenant->email,
+        'password' => 'password',
+    ]);
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('dashboard', absolute: false));
+
+    $response = $this->actingAs($this->userWithoutTenant)->get("/tenant_does_not_exist/users");
+    $response->assertStatus(403);
+});
+
+it('can edit user', function () {
     // Create 2nd test user
     $user_2 = User::factory()->create([
         'email' => 'test_xy@example.com',

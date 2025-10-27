@@ -135,9 +135,6 @@ function deleteTenant() {
                                     required
                                 />
                                 <InputError :message="tenantForm.errors.name ? tenantForm.errors.name[0] : null" />                                
-                                <div v-if="tenantForm.errors.email" class="text-red-500 text-sm mt-1">
-                                    {{ tenantForm.errors.email }}
-                                </div>
                             </div>
                             
                             <div>

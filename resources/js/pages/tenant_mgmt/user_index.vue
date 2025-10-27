@@ -9,11 +9,18 @@ import PlaceholderPattern from '../components/PlaceholderPattern.vue';
 
 const props = defineProps<{
     users: {
-        data: any[];
+        data: Array<{
+            id: number;
+            name: string;
+            email: string;
+            email_verified_at: string | null;
+            roles: string[]; // Changed to support multiple roles
+        }>;
         links: any[];
     };
     tenant: string;
     availableRoles: string[];
+    allFilterRoles: string[];
     filters: {
         sort: string;
         direction: string;
@@ -156,7 +163,9 @@ function deleteUser(userId) {
     }
 }
 
-function updateUserRole(userId: number, newRole: string) {
+function addUserRole(userId: number, newRole: string) {
+    if (!newRole) return; // Don't add empty role
+    
     router.post(
         route('users.assign-role', { user: userId, tenant: props.tenant }), 
         {
@@ -166,6 +175,20 @@ function updateUserRole(userId: number, newRole: string) {
             preserveState: false,
             replace: true,
     });
+}
+
+function removeUserRole(userId: number, roleToRemove: string) {
+    if (confirm(`Remove role "${roleToRemove}" from this user?`)) {
+        router.post(
+            route('users.remove-role', { user: userId, tenant: props.tenant }), 
+            {
+                role: roleToRemove
+            }, {
+                preserveScroll: true,
+                preserveState: false,
+                replace: false,
+        });
+    }
 }
 </script>
 
@@ -193,7 +216,7 @@ function updateUserRole(userId: number, newRole: string) {
                         <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Role</h3>
                         <div class="flex flex-wrap gap-2">
                             <button
-                                v-for="role in availableRoles"
+                                v-for="role in allFilterRoles"
                                 :key="role"
                                 @click="toggleRole(role)"
                                 :class="[
@@ -256,16 +279,14 @@ function updateUserRole(userId: number, newRole: string) {
                                         <span class="text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300">{{ getSortIcon('email') }}</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-3 text-left cursor-pointer group" @click="sort('email_verified_at')">
+                                <th class="px-6 py-3 text-left">
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Status</span>
-                                        <span class="text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300">{{ getSortIcon('role') }}</span>
                                     </div>
                                 </th>
-                                <th class="px-6 py-3 text-left cursor-pointer group" @click="sort('role')">
+                                <th class="px-6 py-3 text-left">
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">Role</span>
-                                        <span class="text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300">{{ getSortIcon('email_verified_at') }}</span>
                                     </div>
                                 </th>
                                 <th class="px-6 py-3 text-right">
@@ -302,17 +323,48 @@ function updateUserRole(userId: number, newRole: string) {
                                         Unverified
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <select 
-                                        :value="user.current_role"
-                                        @change="updateUserRole(user.id, $event.target.value)"
-                                        class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
-                                    >
-                                        <option v-if="!user.current_role" value="">No Role</option>
-                                        <option v-for="role in availableRoles" :key="role" :value="role" :selected="role === user.current_role">
-                                            {{ role }}
-                                        </option>
-                                    </select>
+                                <td class="px-6 py-4" style="max-width: 250px;">
+                                    <div class="space-y-2">
+                                        <!-- Display existing roles as badges with delete button -->
+                                        <div v-if="user.roles && user.roles.length > 0" class="flex flex-wrap gap-2">
+                                            <span 
+                                                v-for="role in user.roles" 
+                                                :key="role"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 whitespace-nowrap"
+                                            >
+                                                {{ role.name }}
+                                                <button
+                                                    @click="removeUserRole(user.id, role.name)"
+                                                    class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                                                    type="button"
+                                                    :title="`Remove ${ role.name } role from ${ user.name }`"
+                                                >
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </span>
+                                        </div>
+                                        <div v-else class="text-xs text-gray-500 dark:text-gray-400 italic">
+                                            No roles assigned
+                                        </div>
+                                        
+                                        <!-- Dropdown to add new role -->
+                                        <select 
+                                            @change="addUserRole(user.id, ($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''"
+                                            class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+                                        >
+                                            <option value="">+ Add Role</option>
+                                            <option 
+                                                v-for="role in availableRoles" 
+                                                :key="role" 
+                                                :value="role"
+                                                :disabled="user.roles && user.roles.includes(role)"
+                                            >
+                                                {{ role }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <Link

@@ -23,15 +23,18 @@ const props = defineProps<{
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Files',
-        href: route('tenant.files.show', { tenant: props.tenant }),
+        href: route('tenant.files.index', { tenant: props.tenant }),
     },
 ];
 
 const showUploadModal = ref(false);
 const showDeleteModal = ref(false);
+const showPreviewModal = ref(false);
 const search = ref(props.filters.search || '');
 const selectedType = ref(props.filters.mime_type || '');
 const fileToDelete = ref(null);
+const previewImageUrl = ref('');
+const currentFile = ref(null);
 
 const form = useForm({
     file: null as File | null,
@@ -89,6 +92,25 @@ function deleteFile() {
             fileToDelete.value = null;
         },
     });
+}
+
+function previewFile(file: any) {
+    currentFile.value = file;
+    
+    // For PDFs, show preview image in modal
+    if (file.mime_type === 'application/pdf') {
+        previewImageUrl.value = route('tenant.files.preview-image', { 
+            tenant: props.tenant, 
+            file: file.id 
+        });
+        showPreviewModal.value = true;
+    } else {
+        // For other previewable files, open in new tab
+        window.open(route('tenant.files.preview', { 
+            tenant: props.tenant, 
+            file: file.id 
+        }), '_blank');
+    }
 }
 
 const debouncedSearch = debounce(() => {
@@ -215,14 +237,15 @@ function getSortIcon(field: string) {
                                 <td class="table-cell">{{ formatDate(file.created_at) }}</td>
                                 <td class="table-cell">
                                     <div class="flex gap-2">
-                                        <Link :href="route('tenant.files.preview', { tenant: $page.props.auth.user.tenant_id, file: file.id })" 
-                                              class="btn-secondary" target="_blank">
+                                        <button @click="previewFile(file)" class="btn-secondary">
                                             Preview
-                                        </Link>
-                                        <Link :href="route('tenant.files.download', { tenant: $page.props.auth.user.tenant_id, file: file.id })" 
-                                              class="btn-secondary">
+                                        </button>
+                                        <a :href="route('tenant.files.download', { tenant: $page.props.auth.user.tenant_id, file: file.id })" 
+                                           class="btn-secondary"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
                                             Download
-                                        </Link>
+                                        </a>
                                         <button @click="confirmDelete(file)" class="btn-danger">
                                             Delete
                                         </button>
@@ -319,6 +342,43 @@ function getSortIcon(field: string) {
                     <button type="button" class="btn-danger" @click="deleteFile" :disabled="deleteForm.processing">
                         Delete File
                     </button>
+                </div>
+            </div>
+        </Modal>
+
+        <!-- Preview Modal -->
+        <Modal :show="showPreviewModal" @close="showPreviewModal = false" max-width="4xl">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                        Preview: {{ currentFile?.original_name }}
+                    </h2>
+                    <button @click="showPreviewModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center items-center bg-gray-100 dark:bg-gray-900 rounded-lg overflow-auto" style="max-height: 70vh;">
+                    <img 
+                        v-if="previewImageUrl" 
+                        :src="previewImageUrl" 
+                        :alt="currentFile?.original_name"
+                        class="max-w-full h-auto"
+                    />
+                </div>
+                
+                <div class="mt-4 flex justify-between items-center">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        First page preview only
+                    </p>
+                    <Link 
+                        :href="route('tenant.files.download', { tenant: props.tenant, file: currentFile?.id })" 
+                        class="btn-primary"
+                    >
+                        Download Full PDF
+                    </Link>
                 </div>
             </div>
         </Modal>

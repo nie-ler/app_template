@@ -15,7 +15,15 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const props = defineProps<{
     users: {
-        data: any[];
+        data: Array<{
+            id: number;
+            name: string;
+            email: string;
+            email_verified_at: string | null;
+            tenant_id: string;
+            deleted_at: string | null;
+            roles: Array<{ name: string }>;
+        }>;
         links: any[];
     };
     tenant: string;
@@ -131,14 +139,26 @@ function deleteUser(id) {
   }
 }
 
-function updateUserRole(userId: number, tenantId: string, newRole: string) {
-  router.post(route('users.assign-role', { user: userId, tenant: props.tenant }), {
+function addUserRole(userId: number, tenantId: string, newRole: string) {
+  if (!newRole) return;
+  
+  router.post(route('users.assign-role', { user: userId, tenant: tenantId }), {
     role: newRole
   }, {
     preserveScroll: true,
     preserveState: true,
-    replace: true,
   });
+}
+
+function removeUserRole(userId: number, tenantId: string, roleToRemove: string) {
+  if (confirm(`Remove role "${roleToRemove}" from this user?`)) {
+    router.post(route('users.remove-role', { user: userId, tenant: tenantId }), {
+      role: roleToRemove
+    }, {
+      preserveScroll: true,
+      preserveState: true,
+    });
+  }
 }
 </script>
 
@@ -309,17 +329,48 @@ function updateUserRole(userId: number, tenantId: string, newRole: string) {
                                         Unverified
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <select 
-                                        :value="user.current_role"
-                                        @change="updateUserRole(user.id, user.tenant_id, $event.target.value)"
-                                        class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
-                                    >
-                                        <option v-if="!user.current_role" value="">No Role</option>
-                                        <option v-for="role in availableRoles" :key="role" :value="role" :selected="role === user.current_role">
-                                            {{ role }}
-                                        </option>
-                                    </select>
+                                <td class="px-6 py-4" style="max-width: 250px;">
+                                    <div class="space-y-2">
+                                        <!-- Display existing roles as badges -->
+                                        <div v-if="user.roles && user.roles.length > 0" class="flex flex-wrap gap-2">
+                                            <span 
+                                                v-for="role in user.roles" 
+                                                :key="role.name"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 whitespace-nowrap"
+                                            >
+                                                {{ role.name }}
+                                                <button
+                                                    @click="removeUserRole(user.id, user.tenant_id, role.name)"
+                                                    class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                                                    type="button"
+                                                    :title="`Remove ${role.name} role`"
+                                                >
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </span>
+                                        </div>
+                                        <div v-else class="text-xs text-gray-500 dark:text-gray-400 italic">
+                                            No roles assigned
+                                        </div>
+                                        
+                                        <!-- Dropdown to add new role -->
+                                        <select 
+                                            @change="addUserRole(user.id, user.tenant_id, ($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''"
+                                            class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+                                        >
+                                            <option value="">+ Add Role</option>
+                                            <option 
+                                                v-for="role in availableRoles" 
+                                                :key="role" 
+                                                :value="role"
+                                                :disabled="user.roles && user.roles.some(r => r.name === role)"
+                                            >
+                                                {{ role }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <Link

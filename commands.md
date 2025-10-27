@@ -31,6 +31,7 @@ admin@admin.com :: admin
 # Testing
 php artisan test
 php artisan test --coverage
+php artisan test --filter=NAME
 
 | Command                                 | Beschreibung                                     |
 | --------------------------------------- | ------------------------------------------------ |
@@ -69,6 +70,9 @@ php artisan key:generate
 php artisan migrate
 
 php artisan --version
+
+## Packet zum Erzeugen der PDF-Vorschau Bilder
+sudo apt-get install php-imagick
 
 ## Stripe installieren (für Tests)
 https://docs.stripe.com/stripe-cli/install?locale=de-DE&install-method=apt
