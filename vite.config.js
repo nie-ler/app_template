@@ -9,7 +9,7 @@ export default defineConfig({
         port: 5173,
         cors: true,
         hmr: {
-            host: '192.168.10.28', // DEINE lokale IP hier
+            host: '192.168.56.2', // DEINE lokale IP hier
         }
     },
     plugins: [
